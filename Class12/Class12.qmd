@@ -1,0 +1,181 @@
+---
+title: "Class12- RNAseq Analysis"
+author: "Loretta Cheng"
+format: pdf
+---
+
+Here we will use the DESeq2 package for RNASeq analysis. The data for today's class came from a study where airway smooth muscle cells were treated with dexamethasone, a synthetic glucocorticoid steroid with anti-inflammatory effects (Himes et al. 2014).
+
+## Import their Data 
+
+We need two things for this analysis
+
+- **countData** (counts for every transcript/gene in each experiment)
+- **colData** (metadata that describes the experimental setup)
+
+```{r}
+countData <- read.csv("airway_scaledcounts.csv", row.names=1)
+head(countData)
+```
+
+```{r}
+metadata <- read.csv("airway_metadata.csv")
+head(metadata)
+```
+
+> Q1. How many genes are in this dataset? 
+
+```{r}
+nrow(countData)
+```
+
+> Q2. How many ‘control’ cell lines do we have? 
+
+```{r}
+sum(metadata$dex == "control")
+```
+
+Step 1: 
+
+Calculate the mean of the control sample (i.e columns in countData)
+calculate the mean of the treated sample
+
+(a) We need to find which columns in countData are "control" samples. 
+  - look in the metadata (aka colData), $dex column 
+  
+```{r}
+control.inds <- metadata$dex == "control"
+```
+
+(b) extract all the control columns from `countData` and call it `control.counts`
+
+```{r}
+control.counts <- countData[ ,control.inds]
+```
+
+(c) calculate the mean value across the rows of `control.counts` i.e. calculate the mean count values for each gene in the control sample. 
+
+```{r}
+control.means <- rowMeans(control.counts)
+head(control.means)
+```
+
+- Step 2. 
+calculate the mean of the treated samples...
+
+```{r}
+treated <- metadata[metadata[,"dex"]=="treated",]
+treated.mean <- rowSums( countData[ ,treated$id] )/4 
+names(treated.mean) <- countData$ensgene
+
+```
+
+We now have control and treated mean count values. For ease of book-keeping I will combine these vectors into a new data.frame called   `meancounts`
+
+```{r}
+meancounts <- data.frame(control.means, treated.mean)
+head(meancounts)
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(meancounts)+ 
+  aes(control.means, treated.mean)+
+  geom_point()+ 
+  scale_x_log10()+
+  scale_y_log10()
+```
+
+We will be using log10. 
+
+```{r}
+log2(20/20)
+```
+
+```{r}
+log2(20/10)
+```
+
+If I have half the amount I will have a log2 fold-change of -1. 
+
+```{r}
+log2(10/20)
+```
+
+```{r}
+log2(40/10)
+```
+
+```{r}
+meancounts$log2fc <- log2(meancounts$treated.mean / meancounts$control.means)
+head(meancounts)
+```
+
+> Q. How many genes are up regulated at the common threshold of +2 log2FC values? 
+
+```{r}
+sum(meancounts$log2fc >= 2, na.rm=TRUE)
+```
+
+Hold on, what about stats! Yes these are big changes but are these changes significant! 
+
+To do this properly we will turn to the DESeq2 package. 
+
+## DESeq2 analysis 
+
+```{r}
+#i message: false 
+library(DESeq2)
+```
+
+To use DESeq we need our input contData and colData in a specific format that DESeq wants: 
+
+```{r}
+dds <- DESeqDataSetFromMatrix(countData= countData, 
+                       colData = metadata, 
+                       design = ~dex)
+```
+
+To run analysis I can now use the main DESeq2 function called `DESeq()` with `dds` as input. 
+
+```{r}
+dds <- DESeq(dds)
+```
+
+To get the results out of this `dds` object we use the `results()` function from package
+
+```{r}
+res <- results(dds)
+head(res)
+```
+
+# Volcano Plot 
+
+Let's make a final (for today) plot of the log2 fold-change vs the adjusted P-value. 
+
+```{r}
+plot(res$log2FoldChange, res$padj)
+```
+
+It is the low P-values that we care about and these are lost in the skewed plot above. Let's take the log of the $padj values for our plot 
+
+```{r}
+plot(res$log2FoldChange, -log(res$padj))
+abline(v=c(+2, -2), col="blue")
+abline(h= -log(0.05),col="blue")
+```
+Finally we can make a color vector to use in the plot to better highlight the genes we are about. 
+
+```{r}
+mycols <- rep("gray", nrow(res))
+mycols[abs(res$log2FoldChange) >= 2] <- "red"
+mycols[res$padj > 0.05] <- "gray"
+
+plot(res$log2FoldChange, -log(res$padj), col=mycols)
+abline(v=c(+2, -2), col="blue")
+abline(h= -log(0.05),col="blue")
+
+```
+
+
