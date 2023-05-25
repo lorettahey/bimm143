@@ -1,0 +1,283 @@
+---
+title: "Class 11: Candy Project"
+author: "Loretta Cheng"
+format: pdf
+---
+
+In today's class we will examine 538 candy data and see if this helps us gain some more feeling for how PCA and other methods work. 
+
+```{r}
+candy <- read.csv("candy-data.txt", row.names=1)
+head(candy)
+```
+
+>Q1. How many different candy types are in this dataset?
+
+```{r}
+nrow(candy)
+```
+
+>Q2. How many fruity candy types are in the dataset?
+
+```{r}
+sum(candy$fruity)
+```
+
+> Q. What are these fruity candy? 
+
+We can use the `==` 
+```{r}
+rownames(candy[ candy$fruity == 1, ])
+```
+
+## How often does my favorite candy win
+
+> Q3. What is your favorite candy in the dataset and what is it’s winpercent value?
+
+```{r}
+candy["Caramel Apple Pops",]$winpercent
+```
+
+>Q4. What is the winpercent value for "Kit Kat"? 
+
+```{r}
+candy["Kit Kat",]$winpercent
+```
+
+>Q5. What is the winpercent value for “Tootsie Roll Snack Bars”?
+
+```{r}
+candy["Tootsie Roll Snack Bars",]$winpercent
+```
+
+We are downloading the `skim()` function to give us a quick overview of the dataset. 
+
+```{r}
+#install.packages("skimr")
+```
+
+> Q6. Is there any variable/column that looks to be on a different scale to the majority of the other columns in the dataset?
+
+Yes, the `winpercent` column is on a 0:100 scale and all others appear to be 0:1 scale. 
+
+> Q7. What do you think a zero and one represent for the candy$chocolate column?
+
+A zero means the candy isn't classified as containing chocolate. 
+
+> Q8. Plot a histogram of winpercent values
+
+```{r}
+library(ggplot2)
+ggplot(candy) +
+  aes(x=winpercent)+ 
+  geom_histogram(bins=10)
+```
+
+> Q9. Is the distribution of winpercent values symmetrical?
+
+No 
+
+> Q10. Is the center of the distribution above or below 50%?
+
+It is below 50% with a mean of:
+```{r}
+mean(candy$winpercent)
+```
+
+> Q11. On average is chocolate candy higher or lower ranked than fruit candy?
+
+```{r}
+# filter/select/subset to just chocolate rows
+  chocolate.candy <- candy[as.logical(candy$chocolate), ]
+# get winpercent value
+chocolate.winpercent <- chocolate.candy$winpercent 
+#calculate their mean winpercent values
+mean(chocolate.winpercent)
+```
+
+We will now do the same thing for fruity candy: 
+
+```{r}
+fruity.candy <- candy[as.logical(candy$fruity), ]
+fruity.winpercent <- fruity.candy$winpercent
+mean(fruity.winpercent)
+```
+
+On average, chocolate has the higher ranking compared to fruity candy. 
+
+> Q12. Is this difference statistically significant?
+
+```{r}
+t.test(chocolate.winpercent, fruity.winpercent)
+```
+
+## Overall candy rankings 
+
+There is a base R function called `sort()` for, guess what sorting vectors of input. 
+
+```{r}
+x <- c(5,2,10)
+
+#sort(x, decreasing = TRUE)
+sort(x)
+```
+
+The buddy function to `sort()` that is often more useful is called `order()`. It returns the "indicies" of the input that would result in it being sorted. 
+
+```{r}
+order(x)
+x[order(x)]
+```
+
+> Q13. What are the five least liked candy types in this set?
+
+I can order by `winpercent`
+
+```{r}
+ord <- order(candy$winpercent,decreasing=FALSE)
+candy[ord,]
+head(candy[ord,],5)
+```
+
+> Q14. What are the top 5 all time favorite candy types out of this set?
+
+```{r}
+ord<- order(candy$winpercent,decreasing=TRUE)
+candy[ord,]
+head(candy[ord,],5)
+```
+
+> Q15. Make a first barplot of candy ranking based on winpercent values.
+
+```{r}
+library(ggplot2)
+
+ggplot(candy) + 
+  aes(winpercent, rownames(candy)) +
+  geom_col()
+```
+
+> Q16. This is quite ugly, use the reorder() function to get the bars sorted by winpercent?
+
+```{r}
+ggplot(candy) + 
+aes(winpercent, reorder(rownames(candy),winpercent))+
+  geom_col()
+```
+
+```{r}
+my_cols=rep("black", nrow(candy))
+my_cols[as.logical(candy$chocolate)] = "chocolate"
+my_cols[as.logical(candy$bar)] = "brown"
+my_cols[as.logical(candy$fruity)] = "pink"
+```
+
+```{r}
+ggplot(candy) + 
+  aes(winpercent, reorder(rownames(candy),winpercent)) +
+  geom_col(fill=my_cols) 
+```
+> Q17. What is the worst ranked chocolate candy?
+
+sixlets 
+
+> Q18. What is the best ranked fruity candy?
+
+Starburts 
+
+> What is the best candy for the least money?
+
+```{r}
+my_cols[as.logical(candy$fruity)] = "red"
+```
+
+
+```{r}
+ggplot(candy) +
+  aes(winpercent, pricepercent) +
+  geom_point(col=my_cols) 
+```
+
+Add some labels 
+
+```{r}
+ggplot(candy) +
+  aes(winpercent, pricepercent, label=rownames(candy)) +
+  geom_point(col=my_cols) + 
+  geom_text()
+
+```
+
+To deal with overlapping labels I can use the **ggrepel** package. 
+
+```{r}
+#install.packages("ggrepel")
+```
+
+```{r}
+library(ggrepel)
+
+ggplot(candy) +
+  aes(winpercent, pricepercent, label=rownames(candy)) +
+  geom_point(col=my_cols) + 
+  geom_text()
+
+```
+
+> Q19. Which candy type is the highest ranked in terms of winpercent for the least money - i.e. offers the most bang for your buck?
+
+```{r}
+ord <- order(candy$pricepercent, decreasing = FALSE)
+head(candy[ord,c(11,12)])
+```
+
+> Q20. What are the top 5 most expensive candy types in the dataset and of these which is the least popular?
+
+```{r}
+ord <- order(candy$pricepercent, decreasing = TRUE)
+head(candy[ord,c(11,12)])
+```
+
+# 5 Exploring the correlation structure 
+
+Pearson correlation goes between -1 and +1 with zero indicating no correlation and values close to one being very highly (ani) correlated. 
+
+```{r}
+#install.packages("corrplot")
+library(corrplot)
+cij <- cor(candy)
+corrplot(cij)
+```
+> Q22. Examining this plot what two variables are anti-correlated (i.e. have minus values)?
+
+Chocolate and fruity are ani-correlated. 
+
+> Q23. Similarly, what two variables are most positively correlated?
+
+Chocolate and winpercent or chocolate and bar. 
+
+# 6. Principal Component Analysis 
+
+The base R function for PCA is called `prcomp()` and we can set "scale=TRUE/FALSE" 
+
+```{r}
+pca <- prcomp(candy, scale=TRUE)
+summary(pca)
+```
+
+The main result of PCA - i.e. the new PC plot (projection of candy on our new PC axis) is contained in `pca$x`
+
+```{r}
+pc <- as.data.frame(pca$x)
+
+ggplot(pc) + 
+  aes(PC1,PC2, label = rownames(pc))+ 
+  geom_point(col=my_cols) #+ 
+  #geom_text_repel(max.overlaps = 5)
+```
+
+```{r}
+par(mar=c(8,4,2,2))
+barplot(pca$rotation[,1], las=2, ylab="PC1 Contribution")
+```
+
