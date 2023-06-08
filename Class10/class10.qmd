@@ -1,0 +1,107 @@
+---
+title: "Class10"
+author: "Loretta Cheng"
+format: pdf
+---
+
+## Comparative structure analysis of Adenlylate Kinase 
+
+We will be performing a principal component analysis on the complete collection of Adenylate kinase structures in the protein data-bank. 
+
+ADK (Adenelate Kinase) is an important drug target and we would love to know how it works - i.e. molecular mechanism. 
+
+We re trying to analyzr the current availanle ADK structures in the PDB to reveal detailed features and mechanistic principles of these essential shape changing transitions. 
+
+>Q10. Which of the packages above is found only on BioConductor and not CRAN? 
+  
+msa
+
+>Q11. Which of the above packages is not found on BioConductor or CRAN?: 
+
+bio3d-view 
+
+>Q12. True or False? Functions from the devtools package can be used to install packages from GitHub and BitBucket? 
+
+TRUE
+
+
+```{r}
+library(bio3d)
+
+aa <- get.seq("1ake_A")
+aa
+```
+
+>Q13. How many amino acids are in this sequence, i.e. how long is this sequence?
+
+214
+
+We can now run BLAST with this sequence. 
+```{r}
+#b <- blast.pdb(aa)
+```
+
+```{r}
+#hits <- plot(b)
+```
+
+Let's see what is in our `hits` object. 
+```{r}
+#hits$pdb.id
+
+hits <- NULL 
+hits$pdb.id <- c('1AKE_A','6S36_A','6RZE_A','3HPR_A','1E4V_A','5EJE_A','1E4Y_A','3X2S_A','6HAP_A','6HAM_A','4K46_A','3GMT_A','4PZL_A')
+```
+
+Now we can download all these PDB structure files: 
+```{r}
+# Download releated PDB files
+files <- get.pdb(hits$pdb.id, path="pdbs", split=TRUE, gzip=TRUE)
+```
+
+```{r}
+files
+```
+
+Now I want to align and supperpose these structures which are all over the place. 
+```{r}
+# Align releated PDBs
+pdbs <- pdbaln(files, fit = TRUE, exefile="msa")
+```
+
+Let's have a look at pdbs: 
+```{r}
+pdbs
+```
+
+Now we have out aligned and superposed structures we can perform all sorts of analysis on them. Let's do PCA...
+
+```{r}
+# Perform PCA
+pc.xray <- pca(pdbs)
+plot(pc.xray)
+```
+
+Results of PCA on Adenylate kinase X-Ray structures. Each dot represents one PDB structure. 
+We can cluster the structures by RMSD (or any other method)
+
+```{r}
+rmsd(pdbs)
+```
+
+```{r}
+rd <- rmsd(pdbs)
+
+hc.rd <- hclust(dist(rd))
+grps <- cutree(hc.rd, k=3)
+
+plot(pc.xray, 1:2, col=grps)
+```
+
+We can make a wee movie- also called a trajectory of the major differences (i.e structural displacements) of ADK. 
+
+```{r}
+# Visualize first principal component
+pc1 <- mktrj(pc.xray, pc=1, file="pc_1.pdb")
+```
+
