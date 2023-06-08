@@ -1,0 +1,88 @@
+---
+title: "class 11"
+author: "Loretta Cheng"
+date: "2023-05-30"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Section 1. Proportion of G/G in a population 
+
+Downloaded a CSV file from Ensemble < https://useast.ensembl.org/Homo_sapiens/Variation/Sample?db=core;r=17:39900444-39901444;v=rs8069176;vdb=variation;vf=105553859#373531_tablePanel > 
+
+Here we read this CSV file 
+
+```{r}
+mxl <- read.csv("373531-SampleGenotypes-Homo_sapiens_Variation_Sample_rs8067378.csv")
+head(mxl)
+```
+
+```{r}
+table(mxl$Genotype..forward.strand.)
+```
+
+```{r}
+table(mxl$Genotype..forward.strand.) / nrow(mxl) * 100
+```
+
+Let's look at a different population. I picked the GBR. 
+
+```{r}
+gbr <- read.csv("373522-SampleGenotypes-Homo_sapiens_Variation_Sample_rs8069176 (1).csv")
+```
+
+Find proportion of G|G 
+
+```{r}
+round(table(gbr$Genotype..forward.strand.) / nrow(gbr) * 100, 2)
+```
+
+This variant that is associated with childhood asthma is frequence in the BGR population compared to MKL population. 
+
+## Section 4: Population Scale Analysis 
+
+One sample is obviously not enough to know what is happening in a population. You are interested in assessing genetic differences on a population scale. So, you processed about ~230 samples and did the normalization on a genome level. Now, you want to find whetherthere is any association of the 4 asthma-associated SNPs (rs8067378...) on ORMDL3 expression.
+
+How many samples do we have? 
+
+```{r}
+expr <- read.table("rs8067378_ENSG00000172057.6.txt",header=TRUE)
+head(expr)
+```
+
+```{r}
+nrow(expr)
+```
+
+```{r}
+table(expr$geno)
+```
+
+```{r}
+library(ggplot2)
+```
+
+>Q14. We are going to make a boxplot.
+
+```{r}
+ggplot(expr) + aes(geno, exp, fill=geno)+
+  geom_boxplot(notch=TRUE)
+```
+Looking at the boxplot per genotype, there is a higher expression of A/A genotype compared to G/G homozygous genotype. Yes, the SNP value effects the expression of ORMDL3. 
+
+>Q13. Read this file into R and determine the sample size for each genotype and their corresponding median expression levels for each of these genotypes.
+
+```{r}
+summary(expr)
+```
+
+We are now going to make a boxplot of the data provided by the summary. 
+
+```{r}
+boxplot(exp ~ geno, data = expr)
+```
+
+
