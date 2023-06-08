@@ -1,0 +1,178 @@
+---
+title: "Class 07"
+author: "Loretta Cheng"
+format: pdf
+---
+
+## Clustering 
+First let's make up some data to cluster so we can get a feel for these methods and how to work with them 
+
+We can use the `rnorm()` function to get random numbers from a normal distribution around a give `mean`.
+```{r}
+hist(rnorm(5000, mean=3))
+```
+
+Lets get 30 points with a mean of 3 and another 3 with the means of -3.  
+```{r}
+tmp <- c(rnorm(30, mean=3),rnorm(30, mean= -3))
+tmp
+```
+
+Put these two together: 
+```{r}
+x <- cbind(x=tmp, y=rev(tmp))
+plot(x)
+```
+
+## K-means clustering.
+
+Very popular clustering method that we can use with the `kmeans()` function based in R 
+```{r}
+km <- kmeans(x, centers=4)
+km 
+```
+
+- Km size 
+```{r}
+km$size
+```
+
+-km cluster
+```{r}
+km$cluster
+```
+
+-km center
+```{r}
+km$centers
+```
+
+> Q. Plot x colored by the kmeans cluster assignment, adding cluster centers as blue prints
+
+```{r}
+mycols <- c(km$cluster)
+plot(x, col=mycols)
+```
+
+
+```{r}
+plot (x, col=km$cluster)
+```
+
+> Q. Let's cluster into 3 groups or same `x` data and make a plot. 
+
+```{r}
+km <- kmeans(x, centers=4)
+plot (x, col=km$cluster)
+```
+
+# Hierarchical clustering
+We can use the `hclust()` function for Hierarchical Clustering.
+Unlike `kmeans()` where we could just pass in our data as input, we need to give `hclust()` a "distance matrix". 
+
+we will use the `dist()` function to start with. 
+```{r}
+d <- dist(x)
+hc <- hclust(d)
+hc
+```
+
+```{r}
+plot(hc)
+```
+
+I can now "cut" my tree with the `cutree()` to yield a cluster membership vector. 
+```{r}
+grps <- cutree(hc, h=8)
+grps
+```
+
+You can also tell `cutree()` ro cut where it yields "k" groups. 
+```{r}
+cutree(hc, k=2)
+```
+
+```{r}
+plot(x, col=grps)
+```
+
+# Principal Component Analysis (PCA) 
+
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+x <- read.csv(url)
+```
+
+>Q1. How many rows and columns are in your new data frame named x? What R functions could you use to answer this questions?
+
+```{r}
+dim(x)
+```
+
+# Checking Our Data 
+
+Making sure no odd things have happened during importing phase. Using the `view()` allows us to display all data 
+
+we will be using the `rownames()` function to fix the row-names as they were set incorrectly in the first column of our x data. 
+
+```{r}
+rownames(x) <- x[,1]
+x <- x[,-1]
+head(x)
+```
+
+Checkin dimensons again: 
+```{r}
+dim(x)
+```
+
+>Q2. Which approach to solving the ‘row-names problem’ mentioned above do you prefer and why? Is one approach more robust than another under certain circumstances?
+
+2. I prefer the x <- read.csv(url, row.anmes=1) function as it is more accurate and the data won't change compared to the other one. 
+
+# spoting major differences and trends
+
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+
+>Q3:Changing what optional argument in the above barplot() function results in the following plot?
+
+Changing the beside=T to beside=F will give us the following graph: 
+```{r}
+barplot(as.matrix(x), beside=F, col=rainbow(nrow(x)))
+```
+
+>Q4: Generating all pairwise plots may help somewhat. Can you make sense of the following code and resulting figure? What does it mean if a given point lies on the diagonal for a given plot?
+
+The code below generates a scatterplot matrix of pairwise plots for the columns of data frame for UK food data. If the points lies on the diagnoal of a plot, it means that two variables are the same variable.  
+```{r}
+pairs(x, col=rainbow(10), pch=16)
+```
+
+>Q6. What is the main differences between N. Ireland and the other countries of the UK in terms of this data-set?
+
+N. Ireland is different compared to the rest of the other Uk countries because less variables are similar to one another. Also the blue and orange dots in N.Ireland are different compared to the rest of the UK countries. 
+
+# PCA to the rescue 
+
+We will be using the `prcomp()` funcion for a slick graphing approach. However, we first need to transpose our data.frame matrix with `t()` transpose function. 
+```{r}
+pca <- prcomp(t(x))
+summary(pca)
+```
+
+> Q7. Complete the code below to generate a plot of PC1 vs PC2. The second line adds text labels over the data points.
+
+```{r}
+plot(pca$x[ ,1], pca$x[ ,2], xlab="PC1", ylab="PC2", xlim=c(-270,500))
+text(pca$x[,1], pca$x[,2], colnames(x))
+```
+
+>Q8. Customize your plot so that the colors of the country names match the colors in our UK and Ireland map and table at start of this document.
+
+```{r}
+plot(pca$x[ ,1], pca$x[ ,2], xlab="PC1", ylab="PC2", xlim=c(-270,500))
+text(pca$x[ ,1], pca$x[ ,2], colnames(x), col= c("red", "orange", "blue", "green"))
+```
+
