@@ -1,0 +1,160 @@
+---
+title: "Class08: Machine Learning Mini Project"
+author: "Loretta Cheng"
+format: pdf
+---
+
+## Breast Cancer Project 
+
+Today we are going to explore some data from the University of Wisconsin Cancer Center on Breast biposy data. 
+
+```{r}
+wisc.data <- read.csv("WisconsinCancer.csv", row.names=1)
+head(wisc.data)
+```
+
+> Q. How many patient samples are in this dataset. 
+
+```{r}
+nrow(wisc.data)
+```
+
+There are `r nrow(wisc.data)` patients in this dataset. This also tells us the number of observation in the dataset as well.
+
+> Q. How many cancer (M) and non cancer (B) samples are there? 
+
+```{r}
+table(wisc.data$diagnosis)
+```
+
+> Q2. How many of the observations have a malignant diagnosis?
+
+```{r}
+sum(wisc.data$diagnosis == "M")
+```
+
+> Q3. How many variables/features in the data are suffixed with _mean?
+
+```{r}
+sum(grepl("_mean$", names(wisc.data)))
+```
+
+
+Save the diagnosis for later use as a reference to compare how well we do with PCA etc. 
+
+```{r}
+diagnosis <- as.factor(wisc.data$diagnosis)
+#diagnosis
+```
+
+Now exclude the diagnosis column from the data 
+
+```{r}
+wisc <- wisc.data[,-1]
+```
+
+> Q. How many "dimensions", "variables", "columns", are there in this database? 
+
+```{r}
+ncol(wisc)
+```
+
+# Principal Component Analysis (PCA)
+
+To perform PCA in R we can use the `prcomp()` function. It takes as input a numeric dataset and optional `scale=FALSE/TRUE` argument. 
+
+We generally always want to set `scale=TRUE` but let's make sure by checking if the mean and standard deviation values are different across these 30 columns. 
+
+```{r}
+round(colMeans(wisc))
+```
+
+```{r}
+pca <- prcomp(wisc, scale=TRUE)
+summary(pca)
+```
+
+```{r}
+attributes(pca)
+```
+
+```{r}
+plot(pca$x[,1], pca$x[,2],col=diagnosis)
+```
+
+```{r}
+library(ggplot2)
+
+x <- as.data.frame(pca$x)
+
+ggplot(x) + 
+  aes(PC1,PC2, col=diagnosis) + 
+  geom_point()
+```
+
+> Q. How much variance is captured in the top 3 PCs.
+
+They capture 76% of total variance. 
+
+> Q. For the first principal component, what is the component of the loading vector (i.e. wisc.pr$rotation[,1]). What does concave.points_mean? 
+
+```{r}
+pca$rotation["concave.points_mean",1]
+```
+
+```{r}
+attributes(pca)
+```
+
+# Combine PCA results with clustering. 
+
+We can use our new PCA variables (i.e. the scores along the PCs contained in t `pca$x`) as input for other methods such as clustering. 
+
+```{r}
+# Hclust needs a distance matrix as input
+d <- dist(pca$x[,1:3])
+hc <- hclust(d, method="ward.D2")
+plot(hc)
+```
+
+To get our cluster membership vector we can use the `cutree()` function and specify a height(`h`) or number of groups (`k`). 
+
+```{r}
+grps <- cutree(hc, h=80)
+table(grps)
+```
+
+I want to find out how many diagnosis "M" and "B" are in each grp? 
+
+```{r}
+table(diagnosis)
+```
+
+```{r}
+table(diagnosis, grps)
+```
+
+We can also plot our results using our clustering vector `grps`. 
+
+```{r}
+plot(pca$x[, 1], pca$x[, 2], col=grps)
+```
+
+```{r}
+library(ggplot2)
+
+x <- as.data.frame(pca$x)
+
+ggplot(x) + 
+  aes(PC1, PC2, col=diagnosis) + 
+  geom_point()
+```
+
+> Q. What is the specificity and sensitivity of our current results? 
+
+```{r}
+table(diagnosis, grps)
+Sensitivity = 179/ (179+33)
+specificity = 333/(333+24)
+```
+
