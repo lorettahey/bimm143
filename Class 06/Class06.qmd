@@ -1,0 +1,195 @@
+---
+title: "Class06"
+author: "Loretta Cheng"
+format: pdf
+---
+
+## Determining overall grades
+
+I will be using this vector's in today's lab to determine overall scores between students.
+```{r}
+# Example input vectors to start with
+student1 <- c(100, 100, 100, 100, 100, 100, 100, 90)
+student2 <- c(100, NA, 90, 90, 90, 90, 97, 80)
+student3 <- c(90, NA, NA, NA, NA, NA, NA, NA)
+```
+
+
+## Using the grade() function 
+
+I will be using the grade() to determine the overall grade from a vector of student homework while dropping the lowest single score. Before I use the grade() I will be testing out the functions first. 
+
+We can use the `mean()` function to calculate the average for a given student vector. Here we are finding the mean for student 1:
+
+```{r}
+mean(student1)
+```
+
+To subtract the lowest score from student one we would use the which.min() function to drop the lowest grade. 
+
+```{r}
+dropped_score <- function(x){
+  x[is.na(x)] <- 0
+  mean(x[-which.min(x)])
+}
+dropped_score(student1)                           
+```
+
+We know that by dropping the lowest score of student 1, their mean total grade will be 100 as 90 has been dropped. 
+
+We will now be calculating the total score with the lowest score being dropped with student 2 using the same idea but not counting the N/A. 
+
+```{r}
+dropped_score <- function(x){
+  x[is.na(x)] <- 0
+  mean(x[-which.min(x)])
+}
+dropped_score(student2)
+```
+
+We set N/A values to zero to count for either missing assignments or no show to class. Setting N/A to zero allows us to calculate the mean score with the lowest score dropped. 
+
+Here we find that with the lowest score dropped from the N/A = 0 in student two came out with the mean score of 91. 
+
+We will be applying the same function to student 3 to find the mean of scores after the lowest one have been dropped:
+
+```{r}
+dropped_score <- function(x){
+  x[is.na(x)] <- 0
+  mean(x[-which.min(x)])
+}
+dropped_score(student3)
+```
+Our average comes out to be 12.85714 once we replace all of our N/A with zeros and dropping lowest score. 
+
+```{r}
+mean(student2[-which.min(student2)])
+```
+I was playing around with the functions to see how to calculate the mean with the lowest score dropped. 
+
+I used this function: 
+```{r}
+dropped_score <- function(x){
+  x[is.na(x)] <- 0
+  mean(x[-which.min(x)])
+}
+dropped_score(student1)
+```
+This function makes it easier for me to calculate average mean with lowest grade dropped between all students. I set the function to grade() allowing me to recall it easier and more clear as well. 
+
+## Q1
+```{r}
+grade <-function(x){
+  x[is.na(x)] <- 0
+  mean(x[-which.min(x)])
+}
+grade(student1)
+```
+
+## Class Notes & using dataset 
+However, we don't want NA to be calculated into the score. So we will be using student's 2. 
+```{r}
+mean(student2, na.rm= TRUE)
+```
+
+What about student 3? 
+```{r}
+mean(student3, na.rm= TRUE)
+```
+
+We can replace the homework assignments NA values with a score of zero. ** How do I do this?**
+
+```{r}
+student2 
+is.na(student2)
+```
+
+```{r}
+student2[is.na(student2)]
+```
+
+```{r}
+is.na(student2)
+which(is.na(student2))
+```
+
+```{r}
+dropped_score <- function(x){
+  x[is.na(x)] <- 0
+  mean(x[-which.min(x)])
+}
+dropped_score(student1)
+dropped_score(student2)
+dropped_score(student3)
+
+```
+
+read a gradebook from online: 
+```{r}
+hw <- read.csv("https://tinyurl.com/gradeinput", row.names= 1)
+hw
+```
+
+We can use the `apply()` function to grade all students in this class using  our `grade()` function
+```{r}
+student_score <- apply(hw, 1, grade)
+student_score
+```
+
+## Q2: using grade() function and the supplied gradebook, who is the top scoring student overall in gradebook? 
+
+```{r}
+top_student <- student_score[which.max(student_score)]
+top_student
+```
+
+## Q3: Which homework was hardest for students? 
+
+```{r}
+avg.score <- (apply(hw, 2, mean, na.rm=TRUE))
+which.min(avg.score)
+```
+
+```{r}
+total.score <- (apply(hw, 2, sum, na.rm=TRUE))
+which.min(total.score)
+```
+
+```{r}
+total.score 
+avg.score
+```
+Homework 2 was hardest for students because the total score for homework 2 between all students were 1456. 
+
+## Q4: highest correlation with average score
+
+```{r}
+hw$hw1
+```
+
+```{r}
+ans <- apply(hw, 1, grade)
+ans
+```
+
+
+```{r}
+cor(hw$hw1, ans)
+```
+If I try on hw2 I get NA as there are missing homeworks (i.e. NA values)
+```{r}
+hw$hw2
+```
+
+I will mask all NA values to zero 
+```{r}
+mask <- hw 
+mask[is.na(mask)] <- 0 
+mask
+```
+
+```{r}
+cor(mask$hw5, ans)
+apply(mask, 2, cor, ans)
+```
+
